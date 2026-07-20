@@ -1,0 +1,10 @@
+# Netlify 배포 설정 — Next.js App Router는 공식 플러그인으로 빌드됩니다.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-bg text-ink antialiased;
+  }
+  body {
+    @apply font-sans text-[15px] leading-relaxed;
+  }
+}
+
+@layer components {
+  /* 카드 — 절제된 B2B 톤: radius 12px, 과한 그림자 금지 */
+  .card {
+    @apply bg-surface border border-line rounded-card;
+  }
+}
+
+/* ───────── 리포트 인쇄 CSS ─────────
+   인쇄 시 사이드바·탭·버튼 등 화면 전용 요소를 숨기고
+   아코디언 내용을 모두 펼쳐 리포트 형태로 출력합니다. */
+@media print {
+  .print-hidden {
+    display: none !important;
+  }
+  .print-expanded {
+    display: block !important;
+  }
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .card {
+    border: 1px solid #e4e8e3 !important;
+    break-inside: avoid;
+  }
+  body {
+    background: #ffffff !important;
+  }
+}
