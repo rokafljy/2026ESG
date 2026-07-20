@@ -42,6 +42,7 @@ export default function NewAssessmentPage() {
 
     setErrorMessage("");
     setErrorStep(null);
+    setAssessmentId(null); // 이전 진단 ID 로 재시도되지 않도록 초기화
     setPhase("uploading");
     setUploadPercent(0);
 
