@@ -1,0 +1,56 @@
+rules_version = '2';
+
+// GRADE UP Firestore Security Rules
+// 원칙: 본인 uid 문서만 읽기 가능. 쓰기는 최소 권한 —
+//  - users: 본인 문서만, 단 plan 필드는 클라이언트에서 변경 불가(관리자 수동 변경 전용)
+//  - assessments: 클라이언트 쓰기 전면 금지 (생성·점수 기록은 Admin SDK 경유 API Route에서만)
+//  - indicators: 읽기 + update(로드맵 체크박스)만 허용, 생성·삭제 금지
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // ---------- users/{uid} ----------
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+
+      // 가입 시 생성 — plan 은 반드시 "free" 로만 생성 가능
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.plan == "free";
+
+      // 본인 프로필 수정 — plan 은 변경 불가 (관리자가 콘솔에서 수동 변경)
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.plan == resource.data.plan;
+
+      allow delete: if false;
+    }
+
+    // ---------- assessments/{id} ----------
+    match /assessments/{assessmentId} {
+      allow read: if signedIn() && request.auth.uid == resource.data.uid;
+      // 생성/수정/삭제는 Admin SDK(API Route) 전용 — 플랜 제한·점수 변조 방지
+      allow write: if false;
+
+      // ---------- assessments/{id}/indicators/{indicatorId} ----------
+      match /indicators/{indicatorId} {
+        function ownsParent() {
+          return signedIn()
+            && request.auth.uid == get(/databases/$(database)/documents/assessments/$(assessmentId)).data.uid;
+        }
+
+        allow read: if ownsParent();
+
+        // 로드맵 체크박스(actions 의 done/doneAt)만 클라이언트에서 갱신 —
+        // 판정·근거·점수 관련 필드는 변경 불가
+        allow update: if ownsParent()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actions']);
+
+        allow create, delete: if false;
+      }
+    }
+  }
+}
